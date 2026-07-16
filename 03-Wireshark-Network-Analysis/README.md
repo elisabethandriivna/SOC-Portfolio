@@ -20,6 +20,15 @@ The goal was to identify:
 
 ---
 
+## Project Files
+
+- [Full investigation report](report.md)
+- [Investigation indicators](iocs.md)
+- [Evidence information](evidence/README.md)
+- [Screenshots](screenshots/)
+
+---
+
 ## Investigation Steps
 
 1. Identified the infected host.
