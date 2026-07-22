@@ -107,7 +107,7 @@ The stream showed:
 - HTTP POST requests;
 - `NetSupport Manager/1.3` as the User-Agent;
 - communication with `45.131.214.85`;
-- `CMD=POLL` and `CMD=END` values;
+- `CMD=POLL` and `CMD=ENCD` values;
 - HTTP `200 OK` responses.
 
 ![TCP stream](screenshots/07-tcp-stream.png)
