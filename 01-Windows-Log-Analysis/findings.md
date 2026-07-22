@@ -43,14 +43,14 @@
 
 ## Investigation Result
 
-✔ Local account created
+- Local account created
 
-✔ Administrator privileges assigned
+- Administrator privileges assigned
 
-✔ Discovery commands executed
+- Discovery commands executed
 
-✔ Failed logon attempts detected
+- Failed logon attempts detected
 
-✔ Successful logon recorded
+- Successful logon recorded
 
-✔ Event timeline reconstructed
+- Event timeline reconstructed
