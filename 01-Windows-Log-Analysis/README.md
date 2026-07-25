@@ -108,3 +108,15 @@ The objective was to reconstruct the activity using Windows Security Event Logs.
 - Event Correlation
 - Incident Timeline Reconstruction
 - MITRE ATT&CK Mapping
+
+---
+
+## Outcome
+
+This project improved my understanding of:
+
+- Windows Security Event Logs
+- Event correlation
+- Windows account management events
+- Process creation monitoring
+- Basic incident investigation
