@@ -18,21 +18,29 @@ Because ExecutionPolicy bypass and encoded PowerShell commands can be used durin
 
 Sysmon Event ID 1 (Process Creation) events were reviewed to identify processes executed on the system.
 
-The process overview showed mostly Splunk Universal Forwarder processes. However, a Windows PowerShell process was also identified:
+The process overview showed mostly Splunk Universal Forwarder processes. However, a Windows PowerShell process was also identified.
 
-- Image: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
+### Process Overview
+
+![Process overview](screenshots/01-process-overview.png)
+
+The PowerShell process had the following information:
+
 - User: `ATTACKRANGE\Administrator`
+- Image: `C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe`
 - Parent process: `C:\Windows\System32\cmd.exe`
 - Process ID: `5948`
 - Parent Process ID: `4936`
 
 The command line contained:
 
-`-Exec bypass -enc`
+`powershell.exe -Exec bypass -enc ...`
 
-This activity was selected for further investigation.
+The use of ExecutionPolicy bypass and an encoded command made this process interesting for further investigation.
 
-**Evidence:** `01-process-overview.png`, `02-suspicious-powershell.png`
+### Suspicious PowerShell Execution
+
+![Suspicious PowerShell execution](screenshots/02-suspicious-powershell.png)
 
 ---
 
@@ -44,85 +52,138 @@ Process GUID:
 
 `{E983936C-DE28-6006-9809-00000000A301}`
 
-Using the Process GUID allowed related Sysmon events to be correlated with the same PowerShell process.
+Using the Process GUID helped correlate different Sysmon events with the same PowerShell process.
 
-The investigation identified two relevant events around the execution time:
+Two relevant events were identified around the execution time:
 
-- Event ID 1 — PowerShell process creation
-- Event ID 11 — file creation
+- `13:27:04.923` — Sysmon Event ID 1: PowerShell process creation
+- `13:27:04.966` — Sysmon Event ID 11: file creation
 
-The events occurred within milliseconds of each other.
+The file creation happened only milliseconds after the PowerShell process started.
 
-**Evidence:** `03-powershell-event-timeline.png`
+### PowerShell Event Timeline
+
+![PowerShell event timeline](screenshots/03-powershell-event-timeline.png)
 
 ---
 
-## 4. File Creation Activity
+## 4. Encoded Command Analysis
+
+The PowerShell command used the `-enc` parameter.
+
+The encoded Base64 value was:
+
+`VwByAGkAdABlAC0ASABvAHMAdAAgACIASABlAGwAbABvACAAVwBvAHIAbABkACIA`
+
+After decoding the value as a PowerShell UTF-16LE encoded command, the result was:
+
+`Write-Host "Hello World"`
+
+This was an important part of the investigation.
+
+The original command line looked suspicious because it used both ExecutionPolicy bypass and an encoded command. However, the decoded command itself did not contain a malicious payload.
+
+This reduced the severity of the finding.
+
+---
+
+## 5. File Creation Activity
 
 Sysmon Event ID 11 showed that the investigated PowerShell process created a temporary `.ps1` file:
 
 `C:\Users\Administrator\AppData\Local\Temp\__PSScriptPolicyTest_1py4clft.gbo.ps1`
 
-The Process ID associated with the event was `5948`, matching the investigated PowerShell process.
+The event was associated with:
 
-This file creation was therefore correlated with the PowerShell execution.
+- Process ID: `5948`
+- Image: `powershell.exe`
+- The same Process GUID as the investigated PowerShell process
 
-The file name suggests PowerShell-related script policy activity. By itself, this event does not prove that a malicious file was created.
+This allowed the file creation event to be correlated with the PowerShell execution.
 
-**Evidence:** `04-powershell-file-creation.png`
+The filename appears to be related to PowerShell script policy testing. Therefore, this file creation alone was not considered evidence of malware.
 
----
+### Related File Creation
 
-## 5. DNS Investigation
-
-Sysmon Event ID 22 (DNS Query) events were searched around the PowerShell execution time.
-
-No DNS events were found in the investigated time window.
-
-Because of this, the available logs do not provide evidence of DNS-based network communication associated with the PowerShell process.
+![PowerShell file creation](screenshots/04-powershell-file-creation.png)
 
 ---
 
-## 6. Additional Sysmon Analysis
+## 6. DNS Investigation
 
-The wider time window contained:
+Sysmon Event ID 22 (DNS Query) events were reviewed during the investigation.
 
-- Event ID 1 — Process Creation
-- Event ID 10 — Process Access
-- Event ID 11 — File Creation
+DNS activity was also checked specifically after the suspicious PowerShell execution.
 
-Process Access events were also reviewed for the suspicious PowerShell Process ID.
+No DNS events were found in the investigated time window after the PowerShell process started.
 
-No Event ID 10 records were found with the investigated PowerShell process as the source process.
-
-Therefore, no additional suspicious process-access activity could be correlated with this PowerShell execution using the available data.
+Because of this, the available Sysmon data did not show DNS communication related to this PowerShell execution.
 
 ---
 
-## 7. Findings
+## 7. Process Activity After PowerShell
+
+Process Creation events after the PowerShell execution were reviewed.
+
+Most of the following processes were related to Splunk Universal Forwarder, including:
+
+- `splunk-MonitorNoHandle.exe`
+- `splunk-powershell.exe`
+- `splunk-regmon.exe`
+- `splunk-admon.exe`
+- `splunk-netmon.exe`
+- `splunk-winprintmon.exe`
+
+These processes were started by `splunkd.exe` and were not considered part of the investigated PowerShell activity.
+
+No clear malicious child process was identified after the PowerShell execution.
+
+---
+
+## 8. Process Access Investigation
+
+Sysmon Event ID 10 (Process Access) events were also reviewed.
+
+A search was performed for Process Access events where PowerShell Process ID `5948` was the source process.
+
+No matching events were found.
+
+Therefore, the available Sysmon data did not show additional process-access activity from the investigated PowerShell process.
+
+---
+
+## 9. Key Findings
 
 The investigation identified the following:
 
 - PowerShell was launched by `cmd.exe`.
 - The process ran under `ATTACKRANGE\Administrator`.
-- The command used ExecutionPolicy bypass.
-- The command contained an encoded PowerShell argument.
+- The command used `-Exec bypass`.
+- The command used the `-enc` parameter.
+- The encoded command was decoded to `Write-Host "Hello World"`.
 - The PowerShell Process ID was `5948`.
 - A related temporary `.ps1` file creation event was identified.
-- No related DNS activity was identified in the investigated time window.
-- No additional Process Access activity from the PowerShell process was identified.
+- No related DNS activity was identified after the PowerShell execution.
+- No malicious child process was identified.
+- No Process Access activity from PowerShell PID `5948` was identified.
 
 ---
 
-## 8. Assessment
+## 10. Assessment
 
-The PowerShell execution should be considered suspicious because encoded commands and ExecutionPolicy bypass are techniques that may be used to hide or execute malicious PowerShell activity.
+The original PowerShell command line was suspicious because ExecutionPolicy bypass and encoded commands can also be used by attackers to hide PowerShell activity.
 
-However, the available evidence does not confirm that the encoded command contained a malicious payload or that the system was successfully compromised.
+However, investigation of the encoded command showed that it only executed:
 
-Additional evidence would be required for a confirmed malicious verdict.
+`Write-Host "Hello World"`
 
-Useful additional sources could include:
+The related `.ps1` file also appeared to be associated with PowerShell script policy testing.
+
+The available Sysmon logs did not show additional evidence such as malicious child processes, related DNS communication, or suspicious Process Access activity.
+
+For these reasons, the activity was investigated as suspicious but was not confirmed as malicious.
+
+Additional evidence would be useful for a stronger conclusion, including:
 
 - PowerShell Script Block Logging
 - Endpoint Detection and Response (EDR) telemetry
@@ -132,12 +193,8 @@ Useful additional sources could include:
 
 ---
 
-## 9. Conclusion
+## 11. Final Verdict
 
-The investigation identified suspicious PowerShell execution and correlated Sysmon activity.
+**Suspicious activity investigated — malicious activity not confirmed.**
 
-The strongest indicator was the combination of ExecutionPolicy bypass and an encoded PowerShell command.
-
-Based on the available Sysmon evidence, the final assessment is:
-
-**Suspicious activity — compromise not confirmed.**
+The PowerShell execution contained characteristics that justified further investigation. However, after decoding the command and reviewing related Sysmon events, the available evidence was not sufficient to confirm malware execution or a successful system compromise.
