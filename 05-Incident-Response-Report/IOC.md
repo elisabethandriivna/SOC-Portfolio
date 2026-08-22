@@ -126,16 +126,14 @@ This helped identify other events connected with the same domain.
 
 | Type | Indicator |
 |---|---|
-| Host | `we8105desk` |
-| User | `WAYNECORPINC\bob.smith` |
-| Internal IP | `192.168.250.100` |
-| Domain | `cerberhhyed5frqa.xmfir0.win` |
-| SHA256 | `37397f8d8e4b3731749094d7b7cd2cf56cacb12dd69e0131f07dd78dff6f262b` |
-| File | `121214.tmp` |
-| Process | `osk.exe` |
-| Process | `cmd.exe` |
-| Process | `wscript.exe` |
-| Process | `AdapterTroubleshooter.exe` |
+| Affected Host | `we8105desk` |
+| Affected User | `WAYNECORPINC\bob.smith` |
+| Affected IP | `192.168.250.100` |
+| Malicious Domain | `cerberhhyed5frqa.xmfir0.win` |
+| Malicious SHA256 | `37397f8d8e4b3731749094d7b7cd2cf56cacb12dd69e0131f07dd78dff6f262b` |
+| Suspicious File | `121214.tmp` |
+| Suspicious File | `osk.exe` |
+| Suspicious Script | `20429.vbs` |
 
 ---
 
